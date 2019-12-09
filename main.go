@@ -24,18 +24,19 @@ var (
 )
 
 const (
-	zoneTemplateStr = `resource "aws_route53_zone" "{{ .ID }}" {
+	zoneTemplateStr = `resource "google_dns_managed_zone" "{{ .ID }}" {
   name = "{{ .Domain }}"
+  dns_name = "{{ .DnsName }}."
 }
 `
 	recordTemplateStr = `{{- range .Record.Comments }}
 # {{ . }}{{ end }}
-resource "aws_route53_record" "{{ .ResourceID }}" {
-  zone_id = {{ zoneReference .ZoneID }}
+resource "google_dns_record_set" "{{ .ResourceID }}" {
+  managed_zone = {{ zoneReference .ZoneID }}
   name    = "{{ .Record.Name }}"
   type    = "{{ .Record.Type }}"
   ttl     = "{{ .Record.TTL }}"
-  records = [{{ range $idx, $elem := .Record.Data }}{{ if $idx }}, {{ end }}{{ ensureQuoted $elem }}{{ end }}]
+  rrdatas = [{{ range $idx, $elem := .Record.Data }}{{ if $idx }}, {{ end }}{{ ensureQuoted $elem }}{{ end }}]
 }
 `
 )
@@ -78,6 +79,7 @@ func newConfigGenerator(syntax syntaxMode) *configGenerator {
 type zoneTemplateData struct {
 	ID     string
 	Domain string
+	DnsName string
 }
 type recordTemplateData struct {
 	ResourceID string
@@ -118,12 +120,13 @@ var (
 	zoneFile         = flag.String("zone-file", "", "Path to zone file. Defaults to <domain>.zone in working dir")
 	showVersion      = flag.Bool("version", false, "Show version")
 	legacySyntax     = flag.Bool("legacy-syntax", false, "Generate legacy terraform syntax (versions older than 0.12)")
+	skipZoneCreation = flag.Bool("skip-zone-creation", false, "Skip creation of the zone")
 )
 
 func main() {
 	flag.Parse()
 	if *showVersion {
-		fmt.Printf("tfz53 %s (%s/%s) (%s on %s)", Version, Branch, Revision, BuildUser, BuildDate)
+		fmt.Printf("bind_zone_to_tf_gcp %s (%s/%s) (%s on %s)", Version, Branch, Revision, BuildUser, BuildDate)
 		os.Exit(0)
 	}
 
@@ -203,12 +206,18 @@ func readZoneRecords(zoneReader io.Reader, excludedTypes map[uint16]bool) map[re
 
 func (g *configGenerator) generateZoneResource(domain string, w io.Writer) (string, error) {
 	zoneName := strings.TrimRight(domain, ".")
+	formatedZoneName := strings.Replace(zoneName, ".", "-", -1)
 	data := zoneTemplateData{
-		ID:     strings.Replace(zoneName, ".", "-", -1),
-		Domain: zoneName,
+		ID:     formatedZoneName,
+		Domain: formatedZoneName,
+		DnsName: zoneName,
 	}
 
-	err := g.zoneTemplate.Execute(w, data)
+	var err error
+	if ( ! *skipZoneCreation ){
+		err = g.zoneTemplate.Execute(w, data)
+	}
+
 	return data.ID, err
 }
 
@@ -314,12 +323,8 @@ func ensureQuoted(s string) string {
 }
 
 func (g *configGenerator) zoneReference(zone string) string {
-	switch g.syntax {
-	case Modern:
-		return fmt.Sprintf("aws_route53_zone.%s.zone_id", zone)
-	case Legacy:
-		return fmt.Sprintf(`"${aws_route53_zone.%s.zone_id}"`, zone)
-	default:
-		panic(fmt.Sprintf("Unknown mode %v", g.syntax))
+	if ( *skipZoneCreation ){
+		return ensureQuoted(zone)
 	}
+	return fmt.Sprintf("google_dns_managed_zone.%s.name", zone)
 }

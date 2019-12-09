@@ -1,11 +1,15 @@
-# tfz53 (previously knows as bzfttr53rdutil)
-A conversion utility for creating [Terraform](https://terraform.io) resource definitions for AWS Route53 from BIND zonefiles.
+# Disclaimer
+
+This is an adaptation of [tfz53](https://github.com/carlpett/tfz53) to manage Cloud DNS zones instead of Route 53. Tests were not adapted and are completely broken.
+
+# bind_zone_to_tf_gcp
+A conversion utility for creating [Terraform](https://terraform.io) resource definitions for Google Cloud DNS from BIND zonefiles.
 
 ## Installation
-Download the [latest release](https://github.com/carlpett/tfz53/releases/latest).
+Download the [latest release](https://github.com/vfiset/bind_zone_to_tf_gcp/releases/latest).
 
 ## Usage
-`tfz53 -domain <domain-name> [flags] > route53-domain.tf`
+`bind_zone_to_tf_gcp -domain <domain-name> [flags] > route53-domain.tf`
 
 ## Flags
 | Name       | Description                                        | Default         |
@@ -13,16 +17,17 @@ Download the [latest release](https://github.com/carlpett/tfz53/releases/latest)
 | -domain    | Name of domain. Required.                          |                 |
 | -zone-file | Path to zone file. Optional.                       | `<domain>.zone` |
 | -exclude   | Record types to ignore, comma-separated. Optional. | `SOA,NS`        |
+| -skip-zone-creation   | Do not create the zone itself, only records | false        |
 
 
 ## Building
 If you want to build from source, you will first need the Go tools. Instructions for installation are available from the [documentation](https://golang.org/doc/install#install).
 
-Once that is done, run 
+Once that is done, run
 
 ```bash
-go get github.com/carlpett/tfz53
-cd $GOPATH/src/github.com/carlpett/tfz53
+go get github.com/vfiset/bind_zone_to_tf_gcp
+cd $GOPATH/src/github.com/vfiset/bind_zone_to_tf_gcp
 go build
 ```
 
