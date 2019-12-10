@@ -1,6 +1,8 @@
 # Disclaimer
 
-This is an adaptation of [tfz53](https://github.com/carlpett/tfz53) to manage Cloud DNS zones instead of Route 53. Tests were not adapted and are completely broken.
+This is a quick and dirty adaptation of [tfz53](https://github.com/carlpett/tfz53) to manage Cloud DNS zones instead of Route 53. Tests were not adapted and are completely broken.
+
+The `legacy-syntax` switch has also been completly ignored untested in this version.
 
 # bind_zone_to_tf_gcp
 A conversion utility for creating [Terraform](https://terraform.io) resource definitions for Google Cloud DNS from BIND zonefiles.
@@ -9,7 +11,7 @@ A conversion utility for creating [Terraform](https://terraform.io) resource def
 Download the [latest release](https://github.com/vfiset/bind_zone_to_tf_gcp/releases/latest).
 
 ## Usage
-`bind_zone_to_tf_gcp -domain <domain-name> [flags] > route53-domain.tf`
+`bind_zone_to_tf_gcp -domain <domain-name> [flags] > gcp-domain.tf`
 
 ## Flags
 | Name       | Description                                        | Default         |
